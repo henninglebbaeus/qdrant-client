@@ -1,14 +1,30 @@
 from asyncio import get_event_loop
 from functools import lru_cache
-from typing import Any, Awaitable, Callable, Dict, Generic, Type, TypeVar, overload
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    Optional,
+    Type,
+    TypeVar,
+    overload,
+)
 from urllib.parse import urljoin
 
 from httpx import AsyncClient, Client, Request, Response
 from pydantic import ValidationError
 from qdrant_client.http.api.aliases_api import AsyncAliasesApi, SyncAliasesApi
 from qdrant_client.http.api.beta_api import AsyncBetaApi, SyncBetaApi
-from qdrant_client.http.api.collections_api import AsyncCollectionsApi, SyncCollectionsApi
-from qdrant_client.http.api.distributed_api import AsyncDistributedApi, SyncDistributedApi
+from qdrant_client.http.api.collections_api import (
+    AsyncCollectionsApi,
+    SyncCollectionsApi,
+)
+from qdrant_client.http.api.distributed_api import (
+    AsyncDistributedApi,
+    SyncDistributedApi,
+)
 from qdrant_client.http.api.indexes_api import AsyncIndexesApi, SyncIndexesApi
 from qdrant_client.http.api.points_api import AsyncPointsApi, SyncPointsApi
 from qdrant_client.http.api.search_api import AsyncSearchApi, SyncSearchApi
@@ -67,34 +83,52 @@ class ApiClient:
     def __init__(self, host: str = None, **kwargs: Any) -> None:
         self.host = host
         self.middleware: MiddlewareT = BaseMiddleware()
-        self._client = Client(**kwargs)
+        self._client = Client(base_url=host, **kwargs)
 
     @overload
-    def request(self, *, type_: Type[T], method: str, url: str, path_params: Dict[str, Any] = None, **kwargs: Any) -> T:
-        ...
+    def request(
+        self,
+        *,
+        type_: Type[T],
+        method: str,
+        url: str,
+        path_params: Dict[str, Any] = None,
+        **kwargs: Any,
+    ) -> T: ...
 
     @overload  # noqa F811
-    def request(self, *, type_: None, method: str, url: str, path_params: Dict[str, Any] = None, **kwargs: Any) -> None:
-        ...
+    def request(
+        self,
+        *,
+        type_: None,
+        method: str,
+        url: str,
+        path_params: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None: ...
 
     def request(  # noqa F811
-        self, *, type_: Any, method: str, url: str, path_params: Dict[str, Any] = None, **kwargs: Any
+        self,
+        *,
+        type_: Any,
+        method: str,
+        url: str,
+        path_params: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> Any:
         if path_params is None:
             path_params = {}
-        url = urljoin((self.host or ""), url.format(**path_params))
+        url = url.format(**path_params)
         if "params" in kwargs and "timeout" in kwargs["params"]:
             kwargs["timeout"] = int(kwargs["params"]["timeout"])
         request = self._client.build_request(method, url, **kwargs)
         return self.send(request, type_)
 
     @overload
-    def request_sync(self, *, type_: Type[T], **kwargs: Any) -> T:
-        ...
+    def request_sync(self, *, type_: Type[T], **kwargs: Any) -> T: ...
 
     @overload  # noqa F811
-    def request_sync(self, *, type_: None, **kwargs: Any) -> None:
-        ...
+    def request_sync(self, *, type_: None, **kwargs: Any) -> None: ...
 
     def request_sync(self, *, type_: Any, **kwargs: Any) -> Any:  # noqa F811
         """
@@ -141,18 +175,34 @@ class AsyncApiClient:
 
     @overload
     async def request(
-        self, *, type_: Type[T], method: str, url: str, path_params: Dict[str, Any] = None, **kwargs: Any
-    ) -> T:
-        ...
+        self,
+        *,
+        type_: Type[T],
+        method: str,
+        url: str,
+        path_params: Dict[str, Any] = None,
+        **kwargs: Any,
+    ) -> T: ...
 
     @overload  # noqa F811
     async def request(
-        self, *, type_: None, method: str, url: str, path_params: Dict[str, Any] = None, **kwargs: Any
-    ) -> None:
-        ...
+        self,
+        *,
+        type_: None,
+        method: str,
+        url: str,
+        path_params: Dict[str, Any] = None,
+        **kwargs: Any,
+    ) -> None: ...
 
     async def request(  # noqa F811
-        self, *, type_: Any, method: str, url: str, path_params: Dict[str, Any] = None, **kwargs: Any
+        self,
+        *,
+        type_: Any,
+        method: str,
+        url: str,
+        path_params: Dict[str, Any] = None,
+        **kwargs: Any,
     ) -> Any:
         if path_params is None:
             path_params = {}
@@ -161,12 +211,10 @@ class AsyncApiClient:
         return await self.send(request, type_)
 
     @overload
-    def request_sync(self, *, type_: Type[T], **kwargs: Any) -> T:
-        ...
+    def request_sync(self, *, type_: Type[T], **kwargs: Any) -> T: ...
 
     @overload  # noqa F811
-    def request_sync(self, *, type_: None, **kwargs: Any) -> None:
-        ...
+    def request_sync(self, *, type_: None, **kwargs: Any) -> None: ...
 
     def request_sync(self, *, type_: Any, **kwargs: Any) -> Any:  # noqa F811
         """
