@@ -45,6 +45,7 @@ pytest-asyncio = "^0.21.0"
 pytest-timeout = "^2.1.0"
 autoflake = "^2.2.1"
 ruff = "0.4.3"
+pre-commit = "^4.1.0"
 
 
 [tool.poetry.group.docs.dependencies]
